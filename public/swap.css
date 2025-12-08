@@ -1,0 +1,89 @@
+/* swap.css — theme overrides for standalone swap.html
+   Theme: Gold (#D4AF37), Black (#000000), Forest Green (#228B22)
+*/
+:root {
+  /* Accent/gold */
+  --jupiter-plugin-primary: 212, 175, 55; /* D4AF37 */
+  /* Background */
+  --jupiter-plugin-background: 0, 0, 0; /* Black */
+  /* Primary text */
+  --jupiter-plugin-primary-text: 255, 255, 255; /* White */
+  /* Warning (uses gold color for e.g. confirmations) */
+  --jupiter-plugin-warning: 212, 175, 55; /* D4AF37 */
+  /* Interactive / module color (Forest Green) */
+  --jupiter-plugin-interactive: 34, 139, 34; /* #228B22 */
+  /* Module (card/containers) */
+  --jupiter-plugin-module: 8, 12, 10; /* deep near-black */
+}
+
+/* Make sure body background is black */
+body {
+  background-color: rgb(var(--jupiter-plugin-background));
+  color: rgb(var(--jupiter-plugin-primary-text));
+}
+
+/* Optional tweaks to align look: add gold borders and green buttons */
+.jup-button, button, .btn, .btn-primary {
+  background-color: rgb(var(--jupiter-plugin-interactive)) !important; /* forest green */
+  color: rgb(var(--jupiter-plugin-primary-text)) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.25) !important; /* Gold tint */
+}
+
+/* Accent text / links */
+.jup-link, a {
+  color: rgb(var(--jupiter-plugin-primary)) !important; /* gold */
+}
+
+/* Add a slight golden glow to the logo if present */
+.logo-gold-effect {
+  box-shadow: 0 0 6px rgba(212,175,55,0.4);
+}
+
+/* Make the shadow dom content blend on dark background */
+.jupiter-plugin-root, #jupiter-plugin {
+  background-color: rgb(var(--jupiter-plugin-background))!important;
+}
+
+/* Make forms labels stand out */
+.form-label, label {
+  color: rgba(var(--jupiter-plugin-primary-text), 0.9) !important;
+}
+
+/* Optional: set a small border radius for a modern look */
+.card, .panel {
+  border-radius: 12px !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.06) !important;
+}
+
+/* Inputs & selects */
+input, select, textarea {
+  background-color: rgba(var(--jupiter-plugin-module), 0.85) !important;
+  color: rgb(var(--jupiter-plugin-primary-text)) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.08) !important;
+}
+
+/* Buttons: focus and hover states */
+.jup-button:hover, button:hover, .btn:hover, .btn-primary:hover {
+  filter: brightness(0.95) !important;
+  box-shadow: 0 4px 14px rgba(34,139,34,0.18);
+}
+
+/* Make the smaller UI elements use gold accents */
+.tag, .badge, .chip {
+  background: rgba(var(--jupiter-plugin-primary), 0.06) !important;
+  color: rgb(var(--jupiter-plugin-primary)) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.12) !important;
+}
+
+/* Make dialogs transparent black with gold rings */
+.dialog, .modal-container, .jup-modal {
+  background: rgba(var(--jupiter-plugin-background), 0.95) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.08) !important;
+}
+
+/* Add overrides for shadow DOM content if loaded without changing compiled plugin
+   This helps the plugin that loads CSS into Shadow DOM by providing a global variable override
+*/
+:root {
+  --jup-swap-theme-primary: rgb(var(--jupiter-plugin-primary));
+}

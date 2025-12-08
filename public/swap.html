@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Jupiter Swap (Standalone)</title>
+
+    <!-- Optional: intercept API calls and route them through our server proxy if query param is present -->
+    <script>
+      (function(){
+        function getQS(name){ return new URLSearchParams(window.location.search).get(name); }
+        const proxyUltra = getQS('proxyUltra');
+        const proxyLite = getQS('proxyLite');
+        // If no proxies specified, do nothing
+        if (!proxyUltra && !proxyLite) return;
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = async function(input, init = {}){
+          try {
+            const urlStr = typeof input === 'string' ? input : input.url;
+            const url = new URL(urlStr, window.location.href);
+            // Ultra endpoint
+            if (proxyUltra && url.hostname.includes('ultra-api.jup.ag')) {
+              const path = url.pathname.replace(/^\/+/, '');
+              const qs = url.searchParams.toString();
+              const base = proxyUltra || '/api-proxy.php?target=ultra&path=';
+              const proxyUrl = base + encodeURI(path) + (qs ? '&' + qs : '');
+              // forward method/body/headers but drop authorization
+              const newInit = Object.assign({}, init);
+              if (newInit.headers && newInit.headers instanceof Headers) {
+                const h = {}; newInit.headers.forEach((v,k)=>{ if (k.toLowerCase() !== 'authorization') h[k]=v; }); newInit.headers = h;
+              }
+              return originalFetch(proxyUrl, newInit);
+            }
+            // Lite endpoint
+            if (proxyLite && url.hostname.includes('lite-api.jup.ag')) {
+              const path = url.pathname.replace(/^\/+/, '').replace(/^swap\//, '');
+              const qs = url.searchParams.toString();
+              const base = proxyLite || '/api-proxy.php?target=lite&path=';
+              const proxyUrl = base + encodeURI(path) + (qs ? '&' + qs : '');
+              const newInit = Object.assign({}, init);
+              if (newInit.headers && newInit.headers instanceof Headers) {
+                const h = {}; newInit.headers.forEach((v,k)=>{ if (k.toLowerCase() !== 'authorization') h[k]=v; }); newInit.headers = h;
+              }
+              return originalFetch(proxyUrl, newInit);
+            }
+          } catch (e) {
+            // if we can't parse, fall back
+          }
+          return originalFetch(input, init);
+        };
+      })();
+    </script>
+
+    <!-- Load plugin script — local build from public/ — this exposes window.Jupiter.init -->
+    <script src="./plugin-v1.js" data-preload></script>
+
+    <!-- Load the plugin css bundles (Tailwind + Jupiter theme) -->
+    <link rel="stylesheet" href="./main-0.1.17-Tailwind.css" />
+    <link rel="stylesheet" href="./main-0.1.17-Jupiter.css" />
+
+    <!-- scoped preflight (normalizes browser styles for Shadow DOM) -->
+    <link rel="stylesheet" href="./scoped-preflight-v4.css" />
+
+    <!-- Add the local swap overrides after the plugin CSS so they take precedence -->
+    <link rel="stylesheet" href="./swap.css" />
+
+    <style>
+      /* basic page layout for demo */
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: black;
+      }
+
+      .container {
+        width: 1024px;
+        max-width: 95vw;
+        padding: 24px;
+        box-sizing: border-box;
+        color: white;
+      }
+
+      /* target area where the plugin integrates */
+      #swap-root {
+        width: 100%;
+        min-height: 640px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="color: rgb(212,175,55);">Jupiter Swap — Standalone</h1>
+
+      <!-- This is the element we will integrate into. The app will render inside it if displayMode is "integrated" -->
+      <div id="swap-root"></div>
+
+      <p>Example standalone host page that uses the plugin bundle only (no Node/Next server required).</p>
+    </div>
+
+    <script>
+      // Parse query params so you can serve a single static page and customize via URL query strings
+      (function () {
+        function getQS(name) {
+          return new URLSearchParams(window.location.search).get(name);
+        }
+
+        const hexToRgb = (hex) => {
+          if (!hex) return null;
+          const m = hex.replace('#', '');
+          const n = parseInt(m, 16);
+          return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+        };
+
+        // Colors via query string: primary, interactive, background
+        const primary = getQS('primary');
+        const interactive = getQS('interactive');
+        const background = getQS('background');
+        if (primary) document.documentElement.style.setProperty('--jupiter-plugin-primary', hexToRgb(decodeURIComponent(primary)));
+        if (interactive) document.documentElement.style.setProperty('--jupiter-plugin-interactive', hexToRgb(decodeURIComponent(interactive)));
+        if (background) document.documentElement.style.setProperty('--jupiter-plugin-background', hexToRgb(decodeURIComponent(background)));
+
+        const mode = getQS('mode') || getQS('displayMode') || 'integrated';
+        const integratedTargetId = getQS('integratedTargetId') || 'swap-root';
+        const useWidgetPosition = getQS('widgetPosition');
+        const widgetSize = getQS('widgetSize') || 'default';
+        const enableWalletPassthrough = getQS('enableWalletPassthrough') === 'true';
+
+        // Wait until plugin script has attached window.Jupiter
+        const waitForInit = () => {
+          if (!window.Jupiter || !window.Jupiter.init) {
+            setTimeout(waitForInit, 50);
+            return;
+          }
+
+          const props = {
+            displayMode: mode,
+            integratedTargetId: integratedTargetId,
+            enableWalletPassthrough: enableWalletPassthrough,
+            widgetStyle: {
+              position: useWidgetPosition || 'bottom-right',
+              size: widgetSize,
+            },
+            // Example callbacks that log to the console
+            onSwapError: (e) => console.log('Swap error', e),
+            onSuccess: (tx) => console.log('Swap success', tx),
+          };
+
+          try {
+            window.Jupiter.init(props);
+          } catch (err) {
+            console.error('Jupiter.init failed', err);
+          }
+        };
+
+        if (document.readyState === 'complete') waitForInit();
+        else document.addEventListener('readystatechange', (e) => { if (document.readyState === 'complete') waitForInit(); });
+      })();
+    </script>
+  </body>
+</html>
