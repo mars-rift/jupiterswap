@@ -47,6 +47,8 @@ export interface UltraSwapQuoteParams {
   swapMode?: 'ExactIn' | 'ExactOut';
   referralAccount?: string;
   referralFee?: number;
+  excludeDexes?: string[];
+  excludeRouters?: string[];
 }
 interface UltraSwapResponseBase {
   signature: string;
