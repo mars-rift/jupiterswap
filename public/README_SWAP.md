@@ -63,5 +63,16 @@ Content-Type: application/json
 ## Example: Forcing plugin to use proxy endpoints
 If you want the plugin to use the proxy instead of calling `ultra-api.jup.ag` directly, configure your client or wrapper to rewrite API URLs to `/api-proxy.php?target=ultra&path=...` or use a reverse proxy rule at the web server level to map the Ultra/Lite API hostnames to your proxy path.
 
+### Runtime fetch-rewrite in `swap.html`
+You can avoid rebuilding the plugin by using a runtime fetch wrapper included in `swap.html`.
+- To enable, add query params to the `swap.html` URL:
+   - `proxyUltra=/api-proxy.php?target=ultra&path=` — rewrite Ultra API calls through `api-proxy.php`
+   - `proxyLite=/api-proxy.php?target=lite&path=` — rewrite Lite API calls through `api-proxy.php`
+   - Example: `https://your-host.example/swap.html?proxyUltra=/api-proxy.php?target=ultra&path=`
+
+This wrapper intercepts `window.fetch` calls and rewrites absolute requests to `ultra-api.jup.ag` and `lite-api.jup.ag` to your proxy, preserving method, headers, and body where possible.
+
+Security note: ensure the proxy is strictly whitelisted (see sections above) when using this method. Untrusted proxies can open your site to request forgery and credential leaks.
+
 ## Final notes
 This setup is intended as a minimal, deployable example that removes the need for a Node.js server and uses PHP only if server-side features are required. Adjust and harden it further before deploying to production.
