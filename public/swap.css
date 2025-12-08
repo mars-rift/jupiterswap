@@ -54,3 +54,36 @@ body {
   border-radius: 12px !important;
   border: 1px solid rgba(var(--jupiter-plugin-primary), 0.06) !important;
 }
+
+/* Inputs & selects */
+input, select, textarea {
+  background-color: rgba(var(--jupiter-plugin-module), 0.85) !important;
+  color: rgb(var(--jupiter-plugin-primary-text)) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.08) !important;
+}
+
+/* Buttons: focus and hover states */
+.jup-button:hover, button:hover, .btn:hover, .btn-primary:hover {
+  filter: brightness(0.95) !important;
+  box-shadow: 0 4px 14px rgba(34,139,34,0.18);
+}
+
+/* Make the smaller UI elements use gold accents */
+.tag, .badge, .chip {
+  background: rgba(var(--jupiter-plugin-primary), 0.06) !important;
+  color: rgb(var(--jupiter-plugin-primary)) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.12) !important;
+}
+
+/* Make dialogs transparent black with gold rings */
+.dialog, .modal-container, .jup-modal {
+  background: rgba(var(--jupiter-plugin-background), 0.95) !important;
+  border: 1px solid rgba(var(--jupiter-plugin-primary), 0.08) !important;
+}
+
+/* Add overrides for shadow DOM content if loaded without changing compiled plugin
+   This helps the plugin that loads CSS into Shadow DOM by providing a global variable override
+*/
+:root {
+  --jup-swap-theme-primary: rgb(var(--jupiter-plugin-primary));
+}

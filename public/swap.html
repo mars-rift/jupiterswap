@@ -58,39 +58,62 @@
     </div>
 
     <script>
+      // Parse query params so you can serve a single static page and customize via URL query strings
       (function () {
-        if (!window.Jupiter) {
-          console.warn('Plugin script not loaded — check plugin-v1.js path');
-          return;
+        function getQS(name) {
+          return new URLSearchParams(window.location.search).get(name);
         }
 
-        // Wait until the plugin has been loaded by the plugin script
-        function waitForInit() {
-          if (!window.Jupiter.init) {
+        const hexToRgb = (hex) => {
+          if (!hex) return null;
+          const m = hex.replace('#', '');
+          const n = parseInt(m, 16);
+          return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+        };
+
+        // Colors via query string: primary, interactive, background
+        const primary = getQS('primary');
+        const interactive = getQS('interactive');
+        const background = getQS('background');
+        if (primary) document.documentElement.style.setProperty('--jupiter-plugin-primary', hexToRgb(decodeURIComponent(primary)));
+        if (interactive) document.documentElement.style.setProperty('--jupiter-plugin-interactive', hexToRgb(decodeURIComponent(interactive)));
+        if (background) document.documentElement.style.setProperty('--jupiter-plugin-background', hexToRgb(decodeURIComponent(background)));
+
+        const mode = getQS('mode') || getQS('displayMode') || 'integrated';
+        const integratedTargetId = getQS('integratedTargetId') || 'swap-root';
+        const useWidgetPosition = getQS('widgetPosition');
+        const widgetSize = getQS('widgetSize') || 'default';
+        const enableWalletPassthrough = getQS('enableWalletPassthrough') === 'true';
+
+        // Wait until plugin script has attached window.Jupiter
+        const waitForInit = () => {
+          if (!window.Jupiter || !window.Jupiter.init) {
             setTimeout(waitForInit, 50);
             return;
           }
 
-          // Optional props you can customize. See README or src/types for available props.
-          window.Jupiter.init({
-            displayMode: 'integrated',
-            integratedTargetId: 'swap-root',
-            // You can customize widget styles, default pair, or callbacks here
-            widgetStyle: { position: 'bottom-right', size: 'default' },
-            // Example: use the console as a simple callback
-            onSwapError: (e) => console.log('Swap error', e) ,
+          const props = {
+            displayMode: mode,
+            integratedTargetId: integratedTargetId,
+            enableWalletPassthrough: enableWalletPassthrough,
+            widgetStyle: {
+              position: useWidgetPosition || 'bottom-right',
+              size: widgetSize,
+            },
+            // Example callbacks that log to the console
+            onSwapError: (e) => console.log('Swap error', e),
             onSuccess: (tx) => console.log('Swap success', tx),
-          });
-        }
+          };
 
-        // Try to call init when DOM completes
-        if (document.readyState === 'complete') {
-          waitForInit();
-        } else {
-          document.addEventListener('readystatechange', (e) => {
-            if (document.readyState === 'complete') waitForInit();
-          });
-        }
+          try {
+            window.Jupiter.init(props);
+          } catch (err) {
+            console.error('Jupiter.init failed', err);
+          }
+        };
+
+        if (document.readyState === 'complete') waitForInit();
+        else document.addEventListener('readystatechange', (e) => { if (document.readyState === 'complete') waitForInit(); });
       })();
     </script>
   </body>
