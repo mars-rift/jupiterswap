@@ -27,13 +27,72 @@ if (!$target || !isset($allowed[$target])) {
 }
 
 $base = $allowed[$target];
+// Path for upstream; relative path only
 $path = isset($_GET['path']) ? ltrim($_GET['path'], '/') : '';
+
+// HTTP method and CORS preflight handling (we need the method early)
+$method = $_SERVER['REQUEST_METHOD'];
+if ($method === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With, X-Client-Platform');
+    http_response_code(204);
+    exit;
+}
+
+if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH'])) {
+    http_response_code(405);
+    header('Allow: GET, POST, PUT, PATCH, OPTIONS');
+    exit;
+}
 
 // Validate path: allow only a limited set of characters and prevent traversal
 if (strlen($path) == 0 || strlen($path) > 256 || preg_match('/\.\.|[^a-zA-Z0-9_\/-]/', $path)) {
     http_response_code(400);
     header('Content-Type: application/json');
     echo json_encode(['error' => 'invalid path']);
+    exit;
+}
+
+// Minimal whitelist for allowed endpoints per target
+$allowMap = [
+    'ultra' => [
+        // endpoints allowed on the ultra API
+        'execute' => ['POST'],
+        'order' => ['GET'],
+        'order/routers' => ['GET'],
+        'balances' => ['GET'], // allows balances/<address>
+        'shield' => ['GET'],
+    ],
+    'lite' => [
+        'program-id-to-label' => ['GET'],
+    ],
+    'data' => [
+        // allow read-only data endpoints if necessary
+    ],
+];
+
+// Check path permission
+// $method already set earlier
+$isAllowed = false;
+foreach ($allowMap[$target] as $allowedPath => $methods) {
+    // direct match
+    if ($path === $allowedPath) {
+        $isAllowed = in_array($method, $methods);
+        break;
+    }
+    // prefix match (e.g., balances/ADDRESS)
+    if (substr($path, 0, strlen($allowedPath) + 1) === $allowedPath . '/') {
+        $isAllowed = in_array($method, $methods);
+        break;
+    }
+    // direct match
+}
+
+if (!$isAllowed) {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'forbidden path or method']);
     exit;
 }
 
