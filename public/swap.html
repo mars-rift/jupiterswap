@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Jupiter Swap (Standalone)</title>
+
+    <!-- Load plugin script — local build from public/ — this exposes window.Jupiter.init -->
+    <script src="./plugin-v1.js" data-preload></script>
+
+    <!-- Load the plugin css bundles (Tailwind + Jupiter theme) -->
+    <link rel="stylesheet" href="./main-0.1.17-Tailwind.css" />
+    <link rel="stylesheet" href="./main-0.1.17-Jupiter.css" />
+
+    <!-- scoped preflight (normalizes browser styles for Shadow DOM) -->
+    <link rel="stylesheet" href="./scoped-preflight-v4.css" />
+
+    <!-- Add the local swap overrides after the plugin CSS so they take precedence -->
+    <link rel="stylesheet" href="./swap.css" />
+
+    <style>
+      /* basic page layout for demo */
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: black;
+      }
+
+      .container {
+        width: 1024px;
+        max-width: 95vw;
+        padding: 24px;
+        box-sizing: border-box;
+        color: white;
+      }
+
+      /* target area where the plugin integrates */
+      #swap-root {
+        width: 100%;
+        min-height: 640px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="color: rgb(212,175,55);">Jupiter Swap — Standalone</h1>
+
+      <!-- This is the element we will integrate into. The app will render inside it if displayMode is "integrated" -->
+      <div id="swap-root"></div>
+
+      <p>Example standalone host page that uses the plugin bundle only (no Node/Next server required).</p>
+    </div>
+
+    <script>
+      (function () {
+        if (!window.Jupiter) {
+          console.warn('Plugin script not loaded — check plugin-v1.js path');
+          return;
+        }
+
+        // Wait until the plugin has been loaded by the plugin script
+        function waitForInit() {
+          if (!window.Jupiter.init) {
+            setTimeout(waitForInit, 50);
+            return;
+          }
+
+          // Optional props you can customize. See README or src/types for available props.
+          window.Jupiter.init({
+            displayMode: 'integrated',
+            integratedTargetId: 'swap-root',
+            // You can customize widget styles, default pair, or callbacks here
+            widgetStyle: { position: 'bottom-right', size: 'default' },
+            // Example: use the console as a simple callback
+            onSwapError: (e) => console.log('Swap error', e) ,
+            onSuccess: (tx) => console.log('Swap success', tx),
+          });
+        }
+
+        // Try to call init when DOM completes
+        if (document.readyState === 'complete') {
+          waitForInit();
+        } else {
+          document.addEventListener('readystatechange', (e) => {
+            if (document.readyState === 'complete') waitForInit();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
